@@ -101,7 +101,7 @@ function initialise () {
         if (tabs[0]) {
             fullDomain = new URL(tabs[0].url).hostname
             baseDomain = getBaseDomain(fullDomain)
-            setDomain(fullDomain)
+            setDomain(baseDomain)
             if (fullDomain !== baseDomain) {
                 $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
             }
