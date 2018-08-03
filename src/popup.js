@@ -8,6 +8,91 @@ let fullDomain = 'unknown'
 let baseDomain = 'unknown'
 let currentDomain = 'unknown'
 
+const bookmarker = {
+    getChildren: (id) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.getChildren(id, resolve)
+            ),
+    getChildByTitle: (parentId, title) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.getChildren(parentId, (children) =>
+                    resolve(children.find((child) => child.title === title)))
+            ),
+    getChildByUrl: (parentId, url) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.getChildren(parentId, (children) =>
+                    resolve(children.find((child) => child.url === url)))
+            ),
+    search: (query) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.search(query, resolve)
+            ),
+    create: (bookmark) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.create(bookmark, resolve)
+            ),
+    update: (id, changes) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.update(id, changes, resolve)
+            ),
+    remove: (id) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.remove(id, resolve)
+            )
+}
+
+const getOtherBookmarksFolder = () => bookmarker.getChildren('0')
+    .then((topLevel) => topLevel[1])
+
+const getExtFolder = () => getOtherBookmarksFolder()
+    .then((otherBookmarksFolder) => bookmarker.getChildByTitle(otherBookmarksFolder.id, EXTENSION_NAME))
+
+const getDmnFolder = (domain) => getExtFolder()
+    .then((extFolder) => extFolder && bookmarker.getChildByTitle(extFolder.id, domain))
+
+const getDmnBookmarks = (domain) => getDmnFolder(domain)
+    .then((folder) => folder && bookmarker.getChildren(folder.id))
+
+const getOrCreateExtFolder = (domain) => getExtFolder()
+    .then((extFolder) =>
+        extFolder || bookmarker.create({title: EXTENSION_NAME})
+    )
+
+const getOrCreateDmnFolder = (domain) => getDmnFolder(domain)
+    .then((dmnFolder) => {
+        if (dmnFolder) {
+            return dmnFolder
+        }
+        else {
+            return getOrCreateExtFolder().then((extFolder) =>
+                bookmarker.create({
+                    parentId: extFolder.id,
+                    title: domain
+                })
+            )
+        }
+    })
+
+const saveBookmark = (domain, bookmark) =>
+    getOrCreateDmnFolder(domain)
+    .then((dmnFolder) => {
+        bookmarker.getChildByUrl(dmnFolder.id, bookmark.url)
+        .then((existing) => {
+            if (existing) {
+                return bookmarker.update(existing.id, {
+                   title: bookmark.title,
+               })
+            }
+            else {
+                return bookmarker.create({
+                   parentId: dmnFolder.id,
+                   title: bookmark.title,
+                   url: bookmark.url
+               })
+            }
+        })
+    })
+
 initialise()
 return
 
@@ -24,6 +109,14 @@ function initialise () {
         $('.sf-add').on('click', onAdd)
         $('.sf-favourites').on('click', '.sf-remove', onRemove)
         $('.sf-favourites').on('click', '.sf-link', onLink)
+
+        // debugging
+        getOtherBookmarksFolder().then(result => console.log('getOtherBookmarksFolder', JSON.stringify(result)))
+        getExtFolder().then(result => console.log('getExtFolder', JSON.stringify(result)))
+        getDmnFolder('foo').then(result => console.log("getDmnFolder('foo')", JSON.stringify(result)))
+        getDmnBookmarks('foo').then(result => console.log("getDmnBookmarks('foo')", JSON.stringify(result)))
+        saveBookmark('foo', {title: 'John Galt', url: 'http://jg.com/'})
+            .then(result => console.log("saveBookmark('John Galt')", JSON.stringify(result)))
     })
 }
 

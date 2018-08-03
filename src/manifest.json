@@ -4,6 +4,7 @@
     "description": "Add favourites on any site",
     "permissions": [
         "activeTab",
+        "bookmarks",
         "storage"
     ],
     "browser_action": {
