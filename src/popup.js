@@ -75,7 +75,7 @@ const getOrCreateDmnFolder = (domain) => getDmnFolder(domain)
 
 const saveBookmark = (domain, bookmark) =>
     getOrCreateDmnFolder(domain)
-    .then((dmnFolder) => {
+    .then((dmnFolder) =>
         bookmarker.getChildByUrl(dmnFolder.id, bookmark.url)
         .then((existing) => {
             if (existing) {
@@ -91,7 +91,7 @@ const saveBookmark = (domain, bookmark) =>
                })
             }
         })
-    })
+    )
 
 initialise()
 return
@@ -109,14 +109,6 @@ function initialise () {
         $('.sf-add').on('click', onAdd)
         $('.sf-favourites').on('click', '.sf-remove', onRemove)
         $('.sf-favourites').on('click', '.sf-link', onLink)
-
-        // debugging
-        getOtherBookmarksFolder().then(result => console.log('getOtherBookmarksFolder', JSON.stringify(result)))
-        getExtFolder().then(result => console.log('getExtFolder', JSON.stringify(result)))
-        getDmnFolder('foo').then(result => console.log("getDmnFolder('foo')", JSON.stringify(result)))
-        getDmnBookmarks('foo').then(result => console.log("getDmnBookmarks('foo')", JSON.stringify(result)))
-        saveBookmark('foo', {title: 'John Galt', url: 'http://jg.com/'})
-            .then(result => console.log("saveBookmark('John Galt')", JSON.stringify(result)))
     })
 }
 
@@ -142,9 +134,9 @@ function onToggleDomain(event) {
 function setDomain(domain) {
     currentDomain = domain
     $('h1 .sf-site').text(currentDomain)
-    getJsonFromStorage('favourites', []).then(favourites => {
+    getDmnBookmarks(currentDomain).then(favourites => {
         clearFavouritesMenu()
-        favourites.forEach(addToFavouritesMenu)
+        favourites && favourites.forEach(addToFavouritesMenu)
     })
 }
 
@@ -157,53 +149,19 @@ function onAdd(event) {
 
 function onRemove(event) {
     event.preventDefault()
-    removeFromFavourites({element: this})
+    removeFromFavourites($(this).closest('li'))
 }
 
 function onLink(event) {
     event.preventDefault()
-    goToFavourite({element: this})
-}
-
-function getJsonFromStorage (subkey, fallback) {
-    return new Promise((resolve,reject) => {
-        const key = `${currentDomain}.${subkey}`
-        chrome.storage.sync.get(key, values => {
-                if (chrome.runtime.lastError) {
-                    console.log(`${EXTENSION_NAME} failed to read ${key} from extension storage`, chrome.runtime.lastError)
-                    resolve(fallback)
-                }
-                else {
-                    resolve(values[key] || fallback)
-                }
-        })
-    })
-}
-
-function saveJsonToStorage (subkey, value) {
-    return new Promise((resolve,reject) => {
-        const key = `${currentDomain}.${subkey}`
-        chrome.storage.sync.set({[key]: value}, () => {
-                if (chrome.runtime.lastError) {
-                    console.log(`${EXTENSION_NAME} failed to save ${key} to extension storage`, chrome.runtime.lastError)
-                    reject()
-                }
-                else {
-                    resolve()
-                }
-        })
-    })
+    goToFavourite($(this).closest('li'))
 }
 
 function addToFavourites ({title, url} = {}) {
     if (url) {
         title = title || url
-        getJsonFromStorage('favourites', []).then(favourites => {
-            if ( ! favourites.find(e => e.url === url)) {
-                favourites.push({title, url})
-                saveJsonToStorage('favourites', favourites)
-                addToFavouritesMenu({title, url})
-            }
+        saveBookmark(currentDomain, {title, url}).then((bookmark) => {
+            addToFavouritesMenu(bookmark)
             // Add, then quickly remove, the "added" class, and let css transitions fade nicely
             const items = $('.sf-favourites li').filter(function () { return $(this).find('a.sf-link').attr('href') === url })
             items.addClass('added')
@@ -216,22 +174,23 @@ function clearFavouritesMenu() {
     $('.sf-favourites').empty()
 }
 
-function addToFavouritesMenu({title, url}) {
-    $('.sf-favourites').append(`<li><a href="#" class="sf-remove">&times;</a><a class="sf-link" href="${url}" title="${url}">${title}</a>`)
+function addToFavouritesMenu({title, url, id}) {
+    $('.sf-favourites li').filter(function () {return $(this).find('.sf-link').attr('href') === url}).remove()
+    const newItem = $(`<li><a href="#" class="sf-remove">&times;</a><a class="sf-link" href="${url}" title="${url}">${title}</a>`)
+        .data('id', id)
+    $('.sf-favourites').append(newItem)
 }
 
-function removeFromFavourites ({element}) {
-    getJsonFromStorage('favourites', []).then(favourites => {
-        const item = $(element).closest('li')
-        const url = item.find('a.sf-link').attr('href')
-        saveJsonToStorage('favourites', favourites.filter(e => e.url !== url))
-        item.addClass('deleted')
-            .on('transitionend', () => { item.remove() })
+function removeFromFavourites (listItem) {
+    bookmarker.remove(listItem.data('id'))
+    .then(() => {
+        listItem.addClass('deleted')
+            .on('transitionend', () => { listItem.remove() })
     })
 }
 
-function goToFavourite ({element}) {
-    const url = $(element).attr('href')
+function goToFavourite (listItem) {
+    const url = listItem.find('.sf-link').attr('href')
     chrome.tabs.executeScript({
         code: `document.location="${url}"`
     })
