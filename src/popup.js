@@ -64,12 +64,21 @@ const getOrCreateDmnFolder = (domain) => getDmnFolder(domain)
             return dmnFolder
         }
         else {
-            return getOrCreateExtFolder().then((extFolder) =>
-                bookmarker.create({
-                    parentId: extFolder.id,
-                    title: domain
+            return getOrCreateExtFolder().then((extFolder) => {
+                return bookmarker.getChildren(extFolder.id)
+                .then((children) => {
+                    const newBookmark = {
+                        parentId: extFolder.id,
+                        title: domain
+                    }
+                    const titleUpper = newBookmark.title.toUpperCase()
+                    const newIndex = children.findIndex((child) => child.title.toUpperCase() > titleUpper)
+                    if (newIndex >= 0) {
+                        newBookmark.index = newIndex
+                    }
+                    return bookmarker.create(newBookmark)
                 })
-            )
+            })
         }
     })
 
@@ -80,7 +89,7 @@ const saveBookmark = (domain, bookmark) =>
         .then((existing) => {
             if (existing) {
                 return bookmarker.update(existing.id, {
-                   title: bookmark.title,
+                   title: bookmark.title
                })
             }
             else {
@@ -89,6 +98,35 @@ const saveBookmark = (domain, bookmark) =>
                    title: bookmark.title,
                    url: bookmark.url
                })
+            }
+        })
+    )
+
+const saveOrderedBookmark = (domain, bookmark) =>
+    getOrCreateDmnFolder(domain)
+    .then((dmnFolder) =>
+        bookmarker.getChildByUrl(dmnFolder.id, bookmark.url)
+        .then((existing) => {
+            if (existing) {
+                return bookmarker.update(existing.id, {
+                   title: bookmark.title
+               })
+            }
+            else {
+                return bookmarker.getChildren(dmnFolder.id)
+                .then((children) => {
+                    const newBookmark = {
+                       parentId: dmnFolder.id,
+                       title: bookmark.title,
+                       url: bookmark.url
+                    }
+                    const titleUpper = newBookmark.title.toUpperCase()
+                    const newIndex = children.findIndex((child) => child.title.toUpperCase() > titleUpper)
+                    if (newIndex >= 0) {
+                        newBookmark.index = newIndex
+                    }
+                    return bookmarker.create(newBookmark)
+                })
             }
         })
     )
@@ -160,7 +198,7 @@ function onLink(event) {
 function addToFavourites ({title, url} = {}) {
     if (url) {
         title = title || url
-        saveBookmark(currentDomain, {title, url}).then((bookmark) => {
+        saveOrderedBookmark(currentDomain, {title, url}).then((bookmark) => {
             addToFavouritesMenu(bookmark)
             // Add, then quickly remove, the "added" class, and let css transitions fade nicely
             const items = $('.sf-favourites li').filter(function () { return $(this).find('a.sf-link').attr('href') === url })
@@ -175,10 +213,20 @@ function clearFavouritesMenu() {
 }
 
 function addToFavouritesMenu({title, url, id}) {
-    $('.sf-favourites li').filter(function () {return $(this).find('.sf-link').attr('href') === url}).remove()
+    $('.sf-favourites li')
+        .filter(function () {return $(this).find('.sf-link').attr('href') === url})
+        .remove()
     const newItem = $(`<li><a href="#" class="sf-remove">&times;</a><a class="sf-link" href="${url}" title="${url}">${title}</a>`)
         .data('id', id)
-    $('.sf-favourites').append(newItem)
+    const titleUpper = title.toUpperCase()
+    const nextLi = $('.sf-favourites li')
+        .filter(function () {return $(this).find('.sf-link').text().toUpperCase() > titleUpper})
+    if (nextLi.length > 0) {
+        nextLi.first().before(newItem)
+    }
+    else {
+        $('.sf-favourites').append(newItem)
+    }
 }
 
 function removeFromFavourites (listItem) {
