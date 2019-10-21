@@ -1,0 +1,20 @@
+{
+    "name": "Site Favourites",
+    "version": "1.0",
+    "description": "Add favourites on any site",
+    "permissions": [
+        "activeTab",
+        "storage"
+    ],
+    "browser_action": {
+        "default_title": "Add favourites on any site",
+        "default_icon": "icon128.png",
+        "default_popup": "popup.html"
+    },
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    },
+    "manifest_version": 2
+}
