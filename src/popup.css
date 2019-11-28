@@ -8,14 +8,33 @@ body {
     background: white;
     margin: 0;
 }
-h1 {
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background: lightgray;
+    font-size: 1em;
+    padding: 0.5em 1em;
+}
+header h1 {
     color: gray;
     font-size: 1em;
-    margin: 0 0 0.5em 0;
-    padding: 0.5em 10em 0.5em 1em;
+    margin: 0 1em 0 0;
+    padding: 0;
     white-space: nowrap;
 }
+header .sf-add {
+    background: whitesmoke;
+    border: solid darkgray 1px;
+    padding: 0.5em 1em;
+    text-align: center;
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+header .sf-add:hover {
+    background: mediumaquamarine;
+}
+
 .sf-site-selector .sf-site-selector-icon {
     display: none;
 }
@@ -31,22 +50,6 @@ h1 {
 
 .sf-content {
     margin: 1em;
-}
-
-.sf-add {
-    position: absolute;
-    top: 0;
-    right: 0;
-
-    background: whitesmoke;
-    border: solid darkgray 1px;
-    padding: 0.5em 1em;
-    text-align: center;
-    text-decoration: none !important;
-}
-
-.sf-add:hover {
-    background: mediumaquamarine;
 }
 
 ul.sf-favourites {
