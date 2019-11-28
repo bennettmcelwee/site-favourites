@@ -121,3 +121,19 @@ ul.sf-favourites li .sf-remove:hover + .sf-link {
     color: red;
     text-decoration: line-through;
 }
+
+.sf-instructions {
+    display: none;
+    color: gray;
+    font-style: italic;
+    margin: -1em 4em 0 0;
+    text-align: right;
+}
+.sf-instructions .arrow {
+    font-size: 2em;
+    font-style: normal;
+}
+
+ul.sf-favourites:empty + .sf-instructions {
+    display: block;
+}
