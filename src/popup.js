@@ -1,8 +1,13 @@
 // IIFE
 (() => {
 
-const EXTENSION_NAME = 'Site Favourites';
-const EXTENSION_VERSION = '1.0'; // Can't read the manifest from here
+// Internally we use "favourites" but the default to display is "favorites"
+const FAVXRITES = chrome.i18n.getMessage('favourites') || 'favorites'
+const FAVXRITES_CAP = chrome.i18n.getMessage('favouritesCap') || 'Favorites'
+
+const EXTENSION_NAME = `Site ${FAVXRITES_CAP}`
+const EXTENSION_NAME_ALT = `Site ${FAVXRITES_CAP === 'Favorites' ? 'Favourites' : 'Favorites'}`
+const EXTENSION_VERSION = '1.0' // Can't read the manifest from here
 
 let fullDomain = 'unknown'
 let baseDomain = 'unknown'
@@ -17,6 +22,11 @@ const bookmarker = {
         new Promise((resolve, reject) =>
                 chrome.bookmarks.getChildren(parentId, (children) =>
                     resolve(children.find((child) => child.title === title)))
+            ),
+    getChildByTitles: (parentId, titles) =>
+        new Promise((resolve, reject) =>
+                chrome.bookmarks.getChildren(parentId, (children) =>
+                    resolve(children.find((child) => titles.includes(child.title))))
             ),
     getChildByUrl: (parentId, url) =>
         new Promise((resolve, reject) =>
@@ -45,7 +55,7 @@ const getOtherBookmarksFolder = () => bookmarker.getChildren('0')
     .then((topLevel) => topLevel[1])
 
 const getExtFolder = () => getOtherBookmarksFolder()
-    .then((otherBookmarksFolder) => bookmarker.getChildByTitle(otherBookmarksFolder.id, EXTENSION_NAME))
+    .then((otherBookmarksFolder) => bookmarker.getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT]))
 
 const getDmnFolder = (domain) => getExtFolder()
     .then((extFolder) => extFolder && bookmarker.getChildByTitle(extFolder.id, domain))
@@ -144,6 +154,8 @@ function initialise () {
                 $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
             }
         }
+        $('span.favourites').text(FAVXRITES)
+        $('span.favouritesCap').text(FAVXRITES_CAP)
         $('.sf-add').on('click', onAdd)
         $('.sf-favourites').on('click', '.sf-remove', onRemove)
         $('.sf-favourites').on('click', '.sf-link', onLink)
@@ -245,4 +257,4 @@ function goToFavourite (listItem) {
 }
 
 // End of IIFE
-})();
+})()
