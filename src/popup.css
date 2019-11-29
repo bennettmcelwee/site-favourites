@@ -31,6 +31,9 @@ header .sf-add {
     text-decoration: none !important;
     white-space: nowrap;
 }
+header .sf-add .heart {
+    color: red;
+}
 header .sf-add:hover {
     background: mediumaquamarine;
 }
