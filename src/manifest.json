@@ -1,6 +1,6 @@
 {
     "name": "Site __MSG_favouritesCap__",
-    "version": "1.0",
+    "version": "1.0.1",
     "description": "Add __MSG_favourites__ on any site",
     "permissions": [
         "activeTab",
