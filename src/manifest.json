@@ -1,14 +1,14 @@
 {
-    "name": "Site __MSG_favouritesCap__",
+    "name": "__MSG_extensionName__",
     "version": "1.0.1",
-    "description": "Add __MSG_favourites__ on any site",
+    "description": "Quickly and easily use site-specific bookmarks on any site",
     "permissions": [
         "activeTab",
         "bookmarks",
         "storage"
     ],
     "browser_action": {
-        "default_title": "Add __MSG_favourites__ on any site",
+        "default_title": "Quickly and easily use site-specific bookmarks on any site",
         "default_icon": "icon128.png",
         "default_popup": "popup.html"
     },

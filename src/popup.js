@@ -2,11 +2,10 @@
 (() => {
 
 // Internally we use "favourites" but the default to display is "favorites"
-const FAVXRITES = chrome.i18n.getMessage('favourites') || 'favorites'
-const FAVXRITES_CAP = chrome.i18n.getMessage('favouritesCap') || 'Favorites'
+const EXTENSION_NAME = chrome.i18n.getMessage('extensionName') || 'Site Favorites'
+const FAVOURITES = chrome.i18n.getMessage('favourites') || 'favorites'
 
-const EXTENSION_NAME = `Site ${FAVXRITES_CAP}`
-const EXTENSION_NAME_ALT = `Site ${FAVXRITES_CAP === 'Favorites' ? 'Favourites' : 'Favorites'}`
+const EXTENSION_NAME_ALT = EXTENSION_NAME === 'Site Favorites' ? 'Site Favourites' : 'Site Favorites'
 const EXTENSION_VERSION = '1.0' // Can't read the manifest from here
 
 let fullDomain = 'unknown'
@@ -55,6 +54,8 @@ const getOtherBookmarksFolder = () => bookmarker.getChildren('0')
     .then((topLevel) => topLevel[1])
 
 const getExtFolder = () => getOtherBookmarksFolder()
+    // If the alternative spelling already exists, just use that
+    // (to avoid ending up with both Site Favorites and Site Favourites folders)
     .then((otherBookmarksFolder) => bookmarker.getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT]))
 
 const getDmnFolder = (domain) => getExtFolder()
@@ -154,8 +155,8 @@ function initialise () {
                 $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
             }
         }
-        $('span.favourites').text(FAVXRITES)
-        $('span.favouritesCap').text(FAVXRITES_CAP)
+        $('.extensionName').text(EXTENSION_NAME)
+        $('span.favourites').text(FAVOURITES)
         $('.sf-add').on('click', onAdd)
         $('.sf-favourites').on('click', '.sf-remove', onRemove)
         $('.sf-favourites').on('click', '.sf-link', onLink)
