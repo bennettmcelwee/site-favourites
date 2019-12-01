@@ -24,4 +24,12 @@ Install from source:
 
 Developers: Release a new version
 ----------
-To build a new release, update the version number in manifest.json. Zip up the `src` directory. Then log in to https://chrome.google.com/webstore/developer/dashboard and upload the zip file to the Chrome web store. It can then be installed and updated like any other Chrome extension.
+To build a new release:
+
+1. Update the version number in manifest.json
+2. Commit all changes
+3. `cd ` _project directory_
+4. `git tag version-`_version_
+5. `zip -r site-favourites-`_version_`.zip src`
+
+Log in to https://chrome.google.com/webstore/developer/dashboard and upload the zip file to the Chrome web store. It can then be installed and updated like any other Chrome extension.
