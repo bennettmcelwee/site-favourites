@@ -1,16 +1,16 @@
-SiteFavourites
+Site Favourites
 =========
 This is a browser plugin that implements a favourites list for each site.
 
 Features
 --------
-* Adds a button to the left of every page. Hover and use.
+* Click the Site Favourites icon in the extensions toolbar next to the address bar. Use and enjoy.
 
 Install in Chrome
 -------
 Install from the Chrome Web Store:
 
-* https://chrome.google.com/webstore/detail/xxx/xxx
+* https://chrome.google.com/webstore/detail/site-favorites/plalahfecpgkkochlldlbdnacljkomfo?hl=en
 
 Install from source:
 
