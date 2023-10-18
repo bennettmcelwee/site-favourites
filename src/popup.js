@@ -7,7 +7,7 @@ const FAVXRITES_CAP = chrome.i18n.getMessage('favouritesCap') || 'Favorites'
 
 const EXTENSION_NAME = `Site ${FAVXRITES_CAP}`
 const EXTENSION_NAME_ALT = `Site ${FAVXRITES_CAP === 'Favorites' ? 'Favourites' : 'Favorites'}`
-const EXTENSION_VERSION = '1.0' // Can't read the manifest from here
+const EXTENSION_VERSION = '1.1' // Can't read the manifest from here
 
 let fullDomain = 'unknown'
 let baseDomain = 'unknown'
