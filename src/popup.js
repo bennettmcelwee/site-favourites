@@ -210,6 +210,7 @@ function onRemove(event) {
 function onLink(event) {
     event.preventDefault()
     goToFavourite($(this).closest('li'))
+    window.close()
 }
 
 function addToFavourites ({title, url} = {}) {
