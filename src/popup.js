@@ -251,8 +251,16 @@ function removeFromFavourites (listItem) {
 
 function goToFavourite (listItem) {
     const url = listItem.find('.sf-link').attr('href')
-    chrome.tabs.executeScript({
-        code: `document.location="${url}"`
+    chrome.tabs.query({currentWindow: true, active: true}, tabs => {
+        chrome.scripting.executeScript({
+            //func: () => document.location = url,
+            func: (url) => {
+                console.log(`SF===> document.location = ${url}`)
+                document.location = url
+            },
+            args: [url],
+            target: { tabId: tabs[0].id },
+        })
     })
 }
 

@@ -5,9 +5,10 @@
     "permissions": [
         "activeTab",
         "bookmarks",
+        "scripting",
         "storage"
     ],
-    "browser_action": {
+    "action": {
         "default_title": "Add __MSG_favourites__ on any site",
         "default_icon": "icon128.png",
         "default_popup": "popup.html"
@@ -19,5 +20,5 @@
         "128": "icon128.png"
     },
     "default_locale": "en",
-    "manifest_version": 2
+    "manifest_version": 3
 }
