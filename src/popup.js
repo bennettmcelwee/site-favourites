@@ -149,9 +149,14 @@ function initialise () {
         if (tabs[0]) {
             fullDomain = new URL(tabs[0].url).hostname
             baseDomain = getBaseDomain(fullDomain)
-            setDomain(baseDomain)
             if (fullDomain !== baseDomain) {
+                // Pre-select full domain if it has bookmarks, otherwise base
                 $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
+                getDmnBookmarks(fullDomain).then(fullFavourites => {
+                    setDomain(fullFavourites?.length ? fullDomain : baseDomain)
+                })
+            } else {
+                setDomain(baseDomain)
             }
         }
         $('span.favourites').text(FAVXRITES)
