@@ -13,82 +13,10 @@ let fullDomain = 'unknown'
 let baseDomain = 'unknown'
 let currentDomain = 'unknown'
 
-async function getChildByTitle(parentId, title) {
-    const children = await chrome.bookmarks.getChildren(parentId)
-    return (children.find(_ => _.title === title))
-}
-async function getChildByTitles(parentId, titles) {
-    const children = await chrome.bookmarks.getChildren(parentId)
-    return (children.find(_ => titles.includes(_.title)))
-}
-async function getChildByUrl(parentId, url) {
-    const children = await chrome.bookmarks.getChildren(parentId)
-    return (children.find(_ => _.url === url))
-}
-
-async function getOtherBookmarksFolder() {
-    const topLevel = (await chrome.bookmarks.getChildren('0'))
-    return topLevel[1]
-}
-async function getFavouritesFolder() {
-    const otherBookmarksFolder = await getOtherBookmarksFolder()
-    return await getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT])
-}
-async function getDomainFolder(domain) {
-    const favouritesFolder = await getFavouritesFolder()
-    return favouritesFolder && await getChildByTitle(favouritesFolder.id, domain)
-}
-async function getDomainBookmarks(domain) {
-    const folder = await getDomainFolder(domain)
-    return await chrome.bookmarks.getChildren(folder.id)
-}
-async function getOrCreateFavouritesFolder(domain) {
-    const favouritesFolder = await getFavouritesFolder()
-    return favouritesFolder || await chrome.bookmarks.create({title: EXTENSION_NAME})
-}
-
-async function addBookmark(bookmark) {
-    const children = await chrome.bookmarks.getChildren(bookmark.parentId)
-    const titleUpper = bookmark.title.toUpperCase()
-    const index = children.findIndex(_ => _.title.toUpperCase() > titleUpper)
-    if (index >= 0) {
-        bookmark.index = index
-    }
-    return await chrome.bookmarks.create(bookmark)
-}
-async function getOrCreateDomainFolder(domain) {
-    const domainFolder = await getDomainFolder(domain)
-    if (domainFolder) {
-        return domainFolder
-    }
-    else {
-        const favouritesFolder = await getOrCreateFavouritesFolder()
-        return await addBookmark({
-            parentId: favouritesFolder.id,
-            title: domain
-        })
-    }
-}
-
-async function saveOrderedBookmark(domain, bookmark) {
-    const domainFolder = await getOrCreateDomainFolder(domain)
-    const existing = await getChildByUrl(domainFolder.id, bookmark.url)
-    if (existing) {
-        return chrome.bookmarks.update(existing.id, {
-            title: bookmark.title
-        })
-    }
-    else {
-        return await addBookmark({
-            parentId: domainFolder.id,
-            title: bookmark.title,
-            url: bookmark.url
-        })
-    }
-}
-
 initialise()
 return
+
+///// Initialise
 
 async function initialise () {
     const tabs = await chrome.tabs.query({currentWindow: true, active: true})
@@ -111,24 +39,68 @@ async function initialise () {
     $('.sf-favourites').on('click', '.sf-link', onLink)
 }
 
-// Given a full domain (e.g. yats.solnet.co.nz), return the base (e.g. solnet.co.nz)
-function getBaseDomain(fullDomain) {
-    let matches
-    if (matches = fullDomain.match(/([^.]+\.[^.]{2,4}\.[^.]{2})$/)) {
-        return matches[0]
-    }
-    else if (matches = fullDomain.match(/([^.]+\.[^.]{2,})$/)) {
-        return matches[0]
-    }
-    else {
-        return fullDomain
-    }
-}
+///// Event handlers
 
 async function onToggleDomain(event) {
     event.preventDefault()
     await setDomain(currentDomain === fullDomain ? baseDomain : fullDomain)
 }
+async function onAdd(event) {
+    event.preventDefault()
+    const tabs = await chrome.tabs.query({currentWindow: true, active: true})
+    await addToFavourites(tabs[0])
+}
+async function onRemove(event) {
+    event.preventDefault()
+    await removeFromFavourites($(this).closest('li'))
+}
+async function onLink(event) {
+    event.preventDefault()
+    await goToFavourite($(this).closest('li'))
+    window.close()
+}
+
+///// Domain-specific bookmarks
+
+async function getDomainFolder(domain) {
+    const favouritesFolder = await getFavouritesFolder()
+    return favouritesFolder && await getChildByTitle(favouritesFolder.id, domain)
+}
+async function getOrCreateDomainFolder(domain) {
+    const domainFolder = await getDomainFolder(domain)
+    if (domainFolder) {
+        return domainFolder
+    }
+    else {
+        const favouritesFolder = await getOrCreateFavouritesFolder()
+        return await addBookmark({
+            parentId: favouritesFolder.id,
+            title: domain
+        })
+    }
+}
+async function getDomainBookmarks(domain) {
+    const folder = await getDomainFolder(domain)
+    return await chrome.bookmarks.getChildren(folder.id)
+}
+async function saveOrderedBookmark(domain, bookmark) {
+    const domainFolder = await getOrCreateDomainFolder(domain)
+    const existing = await getChildByUrl(domainFolder.id, bookmark.url)
+    if (existing) {
+        return chrome.bookmarks.update(existing.id, {
+            title: bookmark.title
+        })
+    }
+    else {
+        return await addBookmark({
+            parentId: domainFolder.id,
+            title: bookmark.title,
+            url: bookmark.url
+        })
+    }
+}
+
+///// UI stuff
 
 async function setDomain(domain) {
     currentDomain = domain
@@ -136,23 +108,6 @@ async function setDomain(domain) {
     const favourites = await getDomainBookmarks(currentDomain)
     clearFavouritesMenu()
     favourites?.forEach(addToFavouritesMenu)
-}
-
-async function onAdd(event) {
-    event.preventDefault()
-    const tabs = await chrome.tabs.query({currentWindow: true, active: true})
-    await addToFavourites(tabs[0])
-}
-
-async function onRemove(event) {
-    event.preventDefault()
-    await removeFromFavourites($(this).closest('li'))
-}
-
-async function onLink(event) {
-    event.preventDefault()
-    await goToFavourite($(this).closest('li'))
-    window.close()
 }
 
 async function addToFavourites ({title, url} = {}) {
@@ -202,6 +157,58 @@ async function goToFavourite (listItem) {
         args: [url],
         target: { tabId: tabs[0].id },
     })
+}
+
+///// Generic bookmarks
+
+async function getOtherBookmarksFolder() {
+    const topLevel = (await chrome.bookmarks.getChildren('0'))
+    return topLevel[1]
+}
+async function getFavouritesFolder() {
+    const otherBookmarksFolder = await getOtherBookmarksFolder()
+    return await getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT])
+}
+async function getOrCreateFavouritesFolder() {
+    const favouritesFolder = await getFavouritesFolder()
+    return favouritesFolder || await chrome.bookmarks.create({title: EXTENSION_NAME})
+}
+async function getChildByTitle(parentId, title) {
+    const children = await chrome.bookmarks.getChildren(parentId)
+    return (children.find(_ => _.title === title))
+}
+async function getChildByTitles(parentId, titles) {
+    const children = await chrome.bookmarks.getChildren(parentId)
+    return (children.find(_ => titles.includes(_.title)))
+}
+async function getChildByUrl(parentId, url) {
+    const children = await chrome.bookmarks.getChildren(parentId)
+    return (children.find(_ => _.url === url))
+}
+async function addBookmark(bookmark) {
+    const children = await chrome.bookmarks.getChildren(bookmark.parentId)
+    const titleUpper = bookmark.title.toUpperCase()
+    const index = children.findIndex(_ => _.title.toUpperCase() > titleUpper)
+    if (index >= 0) {
+        bookmark.index = index
+    }
+    return await chrome.bookmarks.create(bookmark)
+}
+
+///// Utilities
+
+// Given a full domain (e.g. yats.solnet.co.nz), return the base (e.g. solnet.co.nz)
+function getBaseDomain(fullDomain) {
+    let matches
+    if (matches = fullDomain.match(/([^.]+\.[^.]{2,4}\.[^.]{2})$/)) {
+        return matches[0]
+    }
+    else if (matches = fullDomain.match(/([^.]+\.[^.]{2,})$/)) {
+        return matches[0]
+    }
+    else {
+        return fullDomain
+    }
 }
 
 // End of IIFE
