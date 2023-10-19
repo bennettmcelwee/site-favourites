@@ -2,11 +2,10 @@
 (() => {
 
 // Internally we use "favourites" but the default to display is "favorites"
-const FAVXRITES = chrome.i18n.getMessage('favourites') || 'favorites'
-const FAVXRITES_CAP = chrome.i18n.getMessage('favouritesCap') || 'Favorites'
+const EXTENSION_NAME = chrome.i18n.getMessage('extensionName') || 'Site Favorites'
+const FAVOURITES = chrome.i18n.getMessage('favourites') || 'favorites'
 
-const EXTENSION_NAME = `Site ${FAVXRITES_CAP}`
-const EXTENSION_NAME_ALT = `Site ${FAVXRITES_CAP === 'Favorites' ? 'Favourites' : 'Favorites'}`
+const EXTENSION_NAME_ALT = EXTENSION_NAME === 'Site Favorites' ? 'Site Favourites' : 'Site Favorites'
 const EXTENSION_VERSION = '1.1' // Can't read the manifest from here
 
 let fullDomain = 'unknown'
@@ -32,8 +31,8 @@ async function initialise () {
             await setDomain(baseDomain)
         }
     }
-    $('span.favourites').text(FAVXRITES)
-    $('span.favouritesCap').text(FAVXRITES_CAP)
+    $('.extensionName').text(EXTENSION_NAME)
+    $('span.favourites').text(FAVOURITES)
     $('.sf-add').on('click', onAdd)
     $('.sf-favourites').on('click', '.sf-remove', onRemove)
     $('.sf-favourites').on('click', '.sf-link', onLink)
@@ -167,6 +166,8 @@ async function getOtherBookmarksFolder() {
 }
 async function getFavouritesFolder() {
     const otherBookmarksFolder = await getOtherBookmarksFolder()
+    // If the alternative spelling already exists, just use that
+    // (to avoid ending up with both Site Favorites and Site Favourites folders)
     return await getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT])
 }
 async function getOrCreateFavouritesFolder() {

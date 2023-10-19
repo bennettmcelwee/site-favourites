@@ -1,8 +1,8 @@
 {
+    "extensionName": {
+        "message": "Site Favourites"
+    },
     "favourites": {
         "message": "favourites"
-    },
-    "favouritesCap": {
-        "message": "Favourites"
     }
 }
