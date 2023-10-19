@@ -13,158 +13,102 @@ let fullDomain = 'unknown'
 let baseDomain = 'unknown'
 let currentDomain = 'unknown'
 
-const bookmarker = {
-    getChildren: (id) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.getChildren(id, resolve)
-            ),
-    getChildByTitle: (parentId, title) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.getChildren(parentId, (children) =>
-                    resolve(children.find((child) => child.title === title)))
-            ),
-    getChildByTitles: (parentId, titles) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.getChildren(parentId, (children) =>
-                    resolve(children.find((child) => titles.includes(child.title))))
-            ),
-    getChildByUrl: (parentId, url) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.getChildren(parentId, (children) =>
-                    resolve(children.find((child) => child.url === url)))
-            ),
-    search: (query) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.search(query, resolve)
-            ),
-    create: (bookmark) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.create(bookmark, resolve)
-            ),
-    update: (id, changes) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.update(id, changes, resolve)
-            ),
-    remove: (id) =>
-        new Promise((resolve, reject) =>
-                chrome.bookmarks.remove(id, resolve)
-            )
+const getChildByTitle = async (parentId, title) => {
+    const children = await chrome.bookmarks.getChildren(parentId)
+    return (children.find(_ => _.title === title))
+}
+const getChildByTitles = async (parentId, titles) => {
+    const children = await chrome.bookmarks.getChildren(parentId)
+    return (children.find(_ => titles.includes(_.title)))
+}
+const getChildByUrl = async (parentId, url) => {
+    const children = await chrome.bookmarks.getChildren(parentId)
+    return (children.find(_ => _.url === url))
 }
 
-const getOtherBookmarksFolder = () => bookmarker.getChildren('0')
-    .then((topLevel) => topLevel[1])
+const getOtherBookmarksFolder = async () => {
+    const topLevel = (await chrome.bookmarks.getChildren('0'))
+    return topLevel[1]
+}
+const getFavouritesFolder = async () => {
+    const otherBookmarksFolder = await getOtherBookmarksFolder()
+    return await getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT])
+}
+const getDomainFolder = async (domain) => {
+    const favouritesFolder = await getFavouritesFolder()
+    return favouritesFolder && await getChildByTitle(favouritesFolder.id, domain)
+}
+const getDomainBookmarks = async (domain) => {
+    const folder = await getDomainFolder(domain)
+    return await chrome.bookmarks.getChildren(folder.id)
+}
+const getOrCreateFavouritesFolder = async (domain) => {
+    const favouritesFolder = await getFavouritesFolder()
+    return favouritesFolder || await chrome.bookmarks.create({title: EXTENSION_NAME})
+}
 
-const getExtFolder = () => getOtherBookmarksFolder()
-    .then((otherBookmarksFolder) => bookmarker.getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT]))
-
-const getDmnFolder = (domain) => getExtFolder()
-    .then((extFolder) => extFolder && bookmarker.getChildByTitle(extFolder.id, domain))
-
-const getDmnBookmarks = (domain) => getDmnFolder(domain)
-    .then((folder) => folder && bookmarker.getChildren(folder.id))
-
-const getOrCreateExtFolder = (domain) => getExtFolder()
-    .then((extFolder) =>
-        extFolder || bookmarker.create({title: EXTENSION_NAME})
-    )
-
-const getOrCreateDmnFolder = (domain) => getDmnFolder(domain)
-    .then((dmnFolder) => {
-        if (dmnFolder) {
-            return dmnFolder
-        }
-        else {
-            return getOrCreateExtFolder().then((extFolder) => {
-                return bookmarker.getChildren(extFolder.id)
-                .then((children) => {
-                    const newBookmark = {
-                        parentId: extFolder.id,
-                        title: domain
-                    }
-                    const titleUpper = newBookmark.title.toUpperCase()
-                    const newIndex = children.findIndex((child) => child.title.toUpperCase() > titleUpper)
-                    if (newIndex >= 0) {
-                        newBookmark.index = newIndex
-                    }
-                    return bookmarker.create(newBookmark)
-                })
-            })
-        }
-    })
-
-const saveBookmark = (domain, bookmark) =>
-    getOrCreateDmnFolder(domain)
-    .then((dmnFolder) =>
-        bookmarker.getChildByUrl(dmnFolder.id, bookmark.url)
-        .then((existing) => {
-            if (existing) {
-                return bookmarker.update(existing.id, {
-                   title: bookmark.title
-               })
-            }
-            else {
-                return bookmarker.create({
-                   parentId: dmnFolder.id,
-                   title: bookmark.title,
-                   url: bookmark.url
-               })
-            }
+const addBookmark = async (bookmark) => {
+    const children = await chrome.bookmarks.getChildren(bookmark.parentId)
+    const titleUpper = bookmark.title.toUpperCase()
+    const index = children.findIndex(_ => _.title.toUpperCase() > titleUpper)
+    if (index >= 0) {
+        bookmark.index = index
+    }
+    return await chrome.bookmarks.create(bookmark)
+}
+const getOrCreateDomainFolder = async (domain) => {
+    const domainFolder = await getDomainFolder(domain)
+    if (domainFolder) {
+        return domainFolder
+    }
+    else {
+        const favouritesFolder = await getOrCreateFavouritesFolder()
+        return await addBookmark({
+            parentId: favouritesFolder.id,
+            title: domain
         })
-    )
+    }
+}
 
-const saveOrderedBookmark = (domain, bookmark) =>
-    getOrCreateDmnFolder(domain)
-    .then((dmnFolder) =>
-        bookmarker.getChildByUrl(dmnFolder.id, bookmark.url)
-        .then((existing) => {
-            if (existing) {
-                return bookmarker.update(existing.id, {
-                   title: bookmark.title
-               })
-            }
-            else {
-                return bookmarker.getChildren(dmnFolder.id)
-                .then((children) => {
-                    const newBookmark = {
-                       parentId: dmnFolder.id,
-                       title: bookmark.title,
-                       url: bookmark.url
-                    }
-                    const titleUpper = newBookmark.title.toUpperCase()
-                    const newIndex = children.findIndex((child) => child.title.toUpperCase() > titleUpper)
-                    if (newIndex >= 0) {
-                        newBookmark.index = newIndex
-                    }
-                    return bookmarker.create(newBookmark)
-                })
-            }
+const saveOrderedBookmark = async (domain, bookmark) => {
+    const domainFolder = await getOrCreateDomainFolder(domain)
+    const existing = await getChildByUrl(domainFolder.id, bookmark.url)
+    if (existing) {
+        return chrome.bookmarks.update(existing.id, {
+            title: bookmark.title
         })
-    )
+    }
+    else {
+        return await addBookmark({
+            parentId: domainFolder.id,
+            title: bookmark.title,
+            url: bookmark.url
+        })
+    }
+}
 
 initialise()
 return
 
-function initialise () {
-    chrome.tabs.query({currentWindow: true, active: true}, tabs => {
-        if (tabs[0]) {
-            fullDomain = new URL(tabs[0].url).hostname
-            baseDomain = getBaseDomain(fullDomain)
-            if (fullDomain !== baseDomain) {
-                // Pre-select full domain if it has bookmarks, otherwise base
-                $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
-                getDmnBookmarks(fullDomain).then(fullFavourites => {
-                    setDomain(fullFavourites?.length ? fullDomain : baseDomain)
-                })
-            } else {
-                setDomain(baseDomain)
-            }
+async function initialise () {
+    const tabs = await chrome.tabs.query({currentWindow: true, active: true})
+    if (tabs[0]) {
+        fullDomain = new URL(tabs[0].url).hostname
+        baseDomain = getBaseDomain(fullDomain)
+        if (fullDomain !== baseDomain) {
+            // Pre-select full domain if it has bookmarks, otherwise base
+            $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
+            const fullFavourites = await getDomainBookmarks(fullDomain)
+            await setDomain(fullFavourites?.length ? fullDomain : baseDomain)
+        } else {
+            await setDomain(baseDomain)
         }
-        $('span.favourites').text(FAVXRITES)
-        $('span.favouritesCap').text(FAVXRITES_CAP)
-        $('.sf-add').on('click', onAdd)
-        $('.sf-favourites').on('click', '.sf-remove', onRemove)
-        $('.sf-favourites').on('click', '.sf-link', onLink)
-    })
+    }
+    $('span.favourites').text(FAVXRITES)
+    $('span.favouritesCap').text(FAVXRITES_CAP)
+    $('.sf-add').on('click', onAdd)
+    $('.sf-favourites').on('click', '.sf-remove', onRemove)
+    $('.sf-favourites').on('click', '.sf-link', onLink)
 }
 
 // Given a full domain (e.g. yats.solnet.co.nz), return the base (e.g. solnet.co.nz)
@@ -181,48 +125,45 @@ function getBaseDomain(fullDomain) {
     }
 }
 
-function onToggleDomain(event) {
+async function onToggleDomain(event) {
     event.preventDefault()
-    setDomain(currentDomain === fullDomain ? baseDomain : fullDomain)
+    await setDomain(currentDomain === fullDomain ? baseDomain : fullDomain)
 }
 
-function setDomain(domain) {
+async function setDomain(domain) {
     currentDomain = domain
     $('h1 .sf-site').text(currentDomain)
-    getDmnBookmarks(currentDomain).then(favourites => {
-        clearFavouritesMenu()
-        favourites && favourites.forEach(addToFavouritesMenu)
-    })
+    const favourites = await getDomainBookmarks(currentDomain)
+    clearFavouritesMenu()
+    favourites?.forEach(addToFavouritesMenu)
 }
 
-function onAdd(event) {
+async function onAdd(event) {
     event.preventDefault()
-    chrome.tabs.query({currentWindow: true, active: true}, tabs => {
-        addToFavourites(tabs[0])
-    })
+    const tabs = await chrome.tabs.query({currentWindow: true, active: true})
+    await addToFavourites(tabs[0])
 }
 
-function onRemove(event) {
+async function onRemove(event) {
     event.preventDefault()
-    removeFromFavourites($(this).closest('li'))
+    await removeFromFavourites($(this).closest('li'))
 }
 
-function onLink(event) {
+async function onLink(event) {
     event.preventDefault()
-    goToFavourite($(this).closest('li'))
+    await goToFavourite($(this).closest('li'))
     window.close()
 }
 
-function addToFavourites ({title, url} = {}) {
+async function addToFavourites ({title, url} = {}) {
     if (url) {
         title = title || url
-        saveOrderedBookmark(currentDomain, {title, url}).then((bookmark) => {
-            addToFavouritesMenu(bookmark)
-            // Add, then quickly remove, the "added" class, and let css transitions fade nicely
-            const items = $('.sf-favourites li').filter(function () { return $(this).find('a.sf-link').attr('href') === url })
-            items.addClass('added')
-            setTimeout(() => items.removeClass('added'), 100)
-        })
+        const bookmark = await saveOrderedBookmark(currentDomain, {title, url})
+        addToFavouritesMenu(bookmark)
+        // Add, then quickly remove, the "added" class, and let css transitions fade nicely
+        const items = $('.sf-favourites li').filter(function () { return $(this).find('a.sf-link').attr('href') === url })
+        items.addClass('added')
+        setTimeout(() => items.removeClass('added'), 100)
     }
 }
 
@@ -247,26 +188,19 @@ function addToFavouritesMenu({title, url, id}) {
     }
 }
 
-function removeFromFavourites (listItem) {
-    bookmarker.remove(listItem.data('id'))
-    .then(() => {
-        listItem.addClass('deleted')
-            .on('transitionend', () => { listItem.remove() })
-    })
+async function removeFromFavourites (listItem) {
+    await chrome.bookmarks.remove(listItem.data('id'))
+    listItem.addClass('deleted')
+        .on('transitionend', () => { listItem.remove() })
 }
 
-function goToFavourite (listItem) {
+async function goToFavourite (listItem) {
     const url = listItem.find('.sf-link').attr('href')
-    chrome.tabs.query({currentWindow: true, active: true}, tabs => {
-        chrome.scripting.executeScript({
-            //func: () => document.location = url,
-            func: (url) => {
-                console.log(`SF===> document.location = ${url}`)
-                document.location = url
-            },
-            args: [url],
-            target: { tabId: tabs[0].id },
-        })
+    const tabs = await chrome.tabs.query({currentWindow: true, active: true})
+    await chrome.scripting.executeScript({
+        func: (url) => document.location = url,
+        args: [url],
+        target: { tabId: tabs[0].id },
     })
 }
 
