@@ -13,41 +13,41 @@ let fullDomain = 'unknown'
 let baseDomain = 'unknown'
 let currentDomain = 'unknown'
 
-const getChildByTitle = async (parentId, title) => {
+async function getChildByTitle(parentId, title) {
     const children = await chrome.bookmarks.getChildren(parentId)
     return (children.find(_ => _.title === title))
 }
-const getChildByTitles = async (parentId, titles) => {
+async function getChildByTitles(parentId, titles) {
     const children = await chrome.bookmarks.getChildren(parentId)
     return (children.find(_ => titles.includes(_.title)))
 }
-const getChildByUrl = async (parentId, url) => {
+async function getChildByUrl(parentId, url) {
     const children = await chrome.bookmarks.getChildren(parentId)
     return (children.find(_ => _.url === url))
 }
 
-const getOtherBookmarksFolder = async () => {
+async function getOtherBookmarksFolder() {
     const topLevel = (await chrome.bookmarks.getChildren('0'))
     return topLevel[1]
 }
-const getFavouritesFolder = async () => {
+async function getFavouritesFolder() {
     const otherBookmarksFolder = await getOtherBookmarksFolder()
     return await getChildByTitles(otherBookmarksFolder.id, [EXTENSION_NAME, EXTENSION_NAME_ALT])
 }
-const getDomainFolder = async (domain) => {
+async function getDomainFolder(domain) {
     const favouritesFolder = await getFavouritesFolder()
     return favouritesFolder && await getChildByTitle(favouritesFolder.id, domain)
 }
-const getDomainBookmarks = async (domain) => {
+async function getDomainBookmarks(domain) {
     const folder = await getDomainFolder(domain)
     return await chrome.bookmarks.getChildren(folder.id)
 }
-const getOrCreateFavouritesFolder = async (domain) => {
+async function getOrCreateFavouritesFolder(domain) {
     const favouritesFolder = await getFavouritesFolder()
     return favouritesFolder || await chrome.bookmarks.create({title: EXTENSION_NAME})
 }
 
-const addBookmark = async (bookmark) => {
+async function addBookmark(bookmark) {
     const children = await chrome.bookmarks.getChildren(bookmark.parentId)
     const titleUpper = bookmark.title.toUpperCase()
     const index = children.findIndex(_ => _.title.toUpperCase() > titleUpper)
@@ -56,7 +56,7 @@ const addBookmark = async (bookmark) => {
     }
     return await chrome.bookmarks.create(bookmark)
 }
-const getOrCreateDomainFolder = async (domain) => {
+async function getOrCreateDomainFolder(domain) {
     const domainFolder = await getDomainFolder(domain)
     if (domainFolder) {
         return domainFolder
@@ -70,7 +70,7 @@ const getOrCreateDomainFolder = async (domain) => {
     }
 }
 
-const saveOrderedBookmark = async (domain, bookmark) => {
+async function saveOrderedBookmark(domain, bookmark) {
     const domainFolder = await getOrCreateDomainFolder(domain)
     const existing = await getChildByUrl(domainFolder.id, bookmark.url)
     if (existing) {
