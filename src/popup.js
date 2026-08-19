@@ -22,7 +22,7 @@ async function initialise () {
     if (tabs[0]) {
         fullDomain = new URL(tabs[0].url).hostname
         baseDomain = getBaseDomain(fullDomain)
-        if (fullDomain !== baseDomain) {
+        if (fullDomain !== baseDomain && fullDomain !== `www.${baseDomain}`) {
             // Pre-select full domain if it has bookmarks, otherwise base
             $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
             const fullFavourites = await getDomainBookmarks(fullDomain)
