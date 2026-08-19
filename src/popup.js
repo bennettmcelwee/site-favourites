@@ -6,7 +6,7 @@ const EXTENSION_NAME = chrome.i18n.getMessage('extensionName') || 'Site Favorite
 const FAVOURITES = chrome.i18n.getMessage('favourites') || 'favorites'
 
 const EXTENSION_NAME_ALT = EXTENSION_NAME === 'Site Favorites' ? 'Site Favourites' : 'Site Favorites'
-const EXTENSION_VERSION = '1.1' // Can't read the manifest from here
+const EXTENSION_VERSION = '1.1.1' // Can't read the manifest from here
 
 let fullDomain = 'unknown'
 let baseDomain = 'unknown'
