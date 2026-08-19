@@ -80,7 +80,7 @@ async function getOrCreateDomainFolder(domain) {
 }
 async function getDomainBookmarks(domain) {
     const folder = await getDomainFolder(domain)
-    return await chrome.bookmarks.getChildren(folder.id)
+    return folder && await chrome.bookmarks.getChildren(folder.id)
 }
 async function saveOrderedBookmark(domain, bookmark) {
     const domainFolder = await getOrCreateDomainFolder(domain)
