@@ -12,7 +12,7 @@ header {
     display: flex;
     align-items: stretch;
     justify-content: space-between;
-    background: lightgray;
+    background-color: gainsboro;
     font-size: 1em;
     padding: 0.5em 1em 0 1em;
 }
@@ -49,20 +49,24 @@ header .sf-add:hover {
 
 .sf-site-selector .sf-site-selector-icon {
     display: none;
+    color: darkgray;
+    padding: 0 0.5em;
+    transform: scaleX(2) scaleY(1.5);
+    transform-origin: bottom;
 }
 .sf-site-selector.enabled {
     cursor: pointer;
 }
 .sf-site-selector.enabled .sf-site-selector-icon {
-    display: inline;
+    display: inline-block;
 }
 .sf-site {
     color: black;
 }
 
 .sf-content {
-    margin: 1em;
     width: max-content;
+    min-width: 100%;
 }
 
 ul.sf-favourites {
@@ -70,11 +74,11 @@ ul.sf-favourites {
     grid-template-columns: repeat(4, max-content);
     column-gap: 1em;
     list-style: none;
-    margin: 0;
+    margin: 0 1em;
     padding: 0;
 }
 
-ul.sf-favourites li {
+.sf-favourite {
     background-color: white;
     display: grid;
     grid-column: 1 / -1;
@@ -88,66 +92,84 @@ ul.sf-favourites li {
     white-space: nowrap;
 }
 
-ul.sf-favourites li.added {
+.sf-favourite.added {
     background-color: mediumaquamarine;
     transition: background-color 0s;
 }
-ul.sf-favourites li.deleted {
+.sf-favourite.deleted {
     height: 0;
     opacity: 0;
     overflow-y: hidden;
 }
-ul.sf-favourites li.deleted .sf-link {
+.sf-favourite.deleted .sf-link {
     color: red;
     text-decoration: line-through;
 }
 
-ul.sf-favourites li a,
-ul.sf-favourites li a:visited,
-ul.sf-favourites li a:focus,
-ul.sf-favourites li a:hover,
-ul.sf-favourites li a:active
+.sf-favourite a,
+.sf-favourite a:visited,
+.sf-favourite a:focus,
+.sf-favourite a:hover,
+.sf-favourite a:active
  {
     color: darkslategray;
     text-decoration: none;
     height: 100%;
 }
 
-ul.sf-favourites li a:focus,
-ul.sf-favourites li a:hover,
-ul.sf-favourites li a:active
+.sf-favourite a:focus,
+.sf-favourite a:hover,
+.sf-favourite a:active
  {
     color: mediumaquamarine;
 }
 
-ul.sf-favourites li .sf-link {
+.sf-favourite .sf-link {
     display: inline-block;
 }
-ul.sf-favourites li .sf-date {
+.sf-favourite .sf-date,
+.sf-favourite .sf-domain {
     color: slategray;
 }
-ul.sf-favourites li .sf-remove {
+.sf-favourite .sf-remove {
     color: slategray;
     display: inline-block;
     /* font-size: 125%;
     line-height: 1.6; /* 2 / 125% */
     padding: 0 0.5em;
+    width: 1.5em;
 }
 
-ul.sf-favourites li .sf-remove:hover {
+.sf-favourite .sf-remove:hover {
     color: red;
 }
 
-ul.sf-favourites li .sf-remove:hover + .sf-link {
+.sf-favourite .sf-remove:hover + .sf-link {
     color: red;
     text-decoration: line-through;
+}
+
+.sf-sorting {
+    background-color: gainsboro;
+    color: gray;
+    margin: 0.5em 0 0 0;
+    padding: 0.5em 0 0.5em 3.5em;
+}
+ul.sf-favourites:empty + .sf-sorting {
+    display: none;
+}
+.sf-sort:not(.selected) {
+    cursor: pointer;
+}
+.sf-sort.selected {
+    font-weight: bold;
 }
 
 .sf-instructions {
     display: none;
     color: gray;
     font-style: italic;
-    margin: -1em 4em 0 0;
+    margin: 0 5em 1em 0;
     text-align: right;
 }
 .sf-instructions .arrow {
@@ -155,6 +177,6 @@ ul.sf-favourites li .sf-remove:hover + .sf-link {
     font-style: normal;
 }
 
-ul.sf-favourites:empty + .sf-instructions {
+ul.sf-favourites:empty + * + .sf-instructions {
     display: block;
 }
