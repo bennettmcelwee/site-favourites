@@ -48,6 +48,7 @@ async function initialise () {
     $('.sf-add').on('click', onAdd)
     $('.sf-favourites').on('click', '.sf-remove', onRemove)
     $('.sf-favourites').on('click', '.sf-link', onLink)
+    $('.sf-sort').on('click', onSelectSort)
 }
 
 ///// Event handlers
@@ -77,6 +78,16 @@ async function onLink(event) {
     event.preventDefault()
     await goToFavourite($(this).closest('li'))
     window.close()
+}
+function onSelectSort(event) {
+    if ($(this).hasClass('sf-sort-name'))
+        selectedSort = 'name'
+    else if ($(this).hasClass('sf-sort-date'))
+        selectedSort = 'date'
+    else if ($(this).hasClass('sf-sort-domain'))
+        selectedSort = 'domain'
+    showSelectedSort()
+    sortFavourites()
 }
 
 ///// Domain-specific bookmarks
@@ -151,8 +162,13 @@ async function setDomain(domain) {
     $('h1 .sf-site').text(currentDomain)
     const favourites = await getDomainBookmarks(currentDomain)
     if (favourites) {
+        if (selectedSort !== 'name' && selectedSort !== 'date') {
+            selectedSort = 'name'
+        }
+        showSelectedSort()
+        $('.sf-sort-domain-wrapper').hide()
         favourites.sort(selectedSort === 'name' ?
-            (a, b) => a.title.localeCompare(b.title) :
+            (a, b) => a.title.localeCompare(b.title, "en", { sensitivity: "base" }) :
             (a, b) => b.dateAdded - a.dateAdded)
         clearFavouritesMenu()
         for (const favourite of favourites) {
@@ -164,11 +180,37 @@ async function setDomain(domain) {
 async function setRecent() {
     const favourites = await getRecentBookmarks()
     if (favourites) {
+        selectedSort = 'date'
+        showSelectedSort()
+        $('.sf-sort-domain-wrapper').show()
         clearFavouritesMenu()
         for (const favourite of favourites) {
             $('.sf-favourites').append(await createFavouriteItem(favourite, true))
         }
     }
+}
+
+function showSelectedSort() {
+    $('.sf-sort-name, .sf-sort-date, .sf-sort-domain').removeClass('selected')
+    $(`.sf-sort-${selectedSort}`).addClass('selected')
+}
+
+function sortFavourites() {
+    const items = $('.sf-favourites')
+    let comparator
+    switch (selectedSort) {
+        case 'domain':
+            comparator = (a, b) => $(a).find('.sf-domain').text().localeCompare($(b).find('.sf-domain').text(), "en", { sensitivity: "base" })
+            break
+        case 'date':
+            comparator = (a, b) => $(b).data('dateAdded') - $(a).data('dateAdded')
+            break
+        case 'name': // fallthrough
+        default:
+            comparator = (a, b) => $(a).find('.sf-link').text().localeCompare($(b).find('.sf-link').text(), "en", { sensitivity: "base" })
+            break;
+    }
+    items.children('li.sf-favourite').detach().sort(comparator).appendTo(items);
 }
 
 async function addToFavourites ({title, url} = {}) {
@@ -192,7 +234,7 @@ async function createFavouriteItem(favourite, includeDomain) {
     const domain = includeDomain ? (await chrome.bookmarks.get(parentId))[0]?.title : null
     const domainElement = domain ? `<span class="sf-domain">${domain}</span>` : ''
     const dateElement = dateAdded ? `<span class="sf-date" title="${formatAddedDateTooltip(dateAdded)}">${formatAddedDate(dateAdded)}</span>` : ''
-    return $(`<li><a href="#" class="sf-remove">&times;</a><a class="sf-link" href="${url}" title="${url}">${title}</a>${domainElement}${dateElement}`)
+    return $(`<li class="sf-favourite"><a href="#" class="sf-remove">&times;</a><a class="sf-link" href="${url}" title="${url}">${title}</a>${domainElement}${dateElement}`)
         .data('id', id).data('dateAdded', dateAdded)
 }
 

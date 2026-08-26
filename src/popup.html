@@ -6,11 +6,11 @@
     </head>
     <body class="sf-panel">
         <header>
-            <h1 class="tab-site selected">
+            <h1 class="tab-site selected" title="Favourite pages on this site">
                 Site <span class="favourites">favorites</span> for<br/>
-                <span class="sf-site-selector"><span class="sf-site">this site</span><span class="sf-site-selector-icon"> &#9660;</span></span>
+                <span class="sf-site-selector"><span class="sf-site">this site</span><span class="sf-site-selector-icon">&#8964;</span></span>
             </h1>
-            <h1 class="tab-recent">
+            <h1 class="tab-recent" title="Site favourites added in the last month">
                 Recent site<br/>favourites
             </h1>
             <div class="spacer"></div>
@@ -18,6 +18,14 @@
         </header>
         <section class="sf-content">
             <ul class="sf-favourites"></ul>
+            <p class="sf-sorting">
+                Sort by
+                <span class="sf-sort sf-sort-name">name</span> |
+                <span class="sf-sort-domain-wrapper">
+                    <span class="sf-sort sf-sort-domain">website</span> |
+                </span>
+                <span class="sf-sort sf-sort-date">date</span>
+            </p>
             <p class="sf-instructions">
                 Click to add <span class="arrow">&#10548;</span>
             </p>
