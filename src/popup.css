@@ -131,6 +131,9 @@ ul.sf-favourites {
 .sf-favourite .sf-domain {
     color: slategray;
 }
+.sf-content:not(.sf-selected-recent) .sf-domain {
+    display: none;
+}
 .sf-favourite .sf-remove {
     color: slategray;
     display: inline-block;
@@ -163,6 +166,9 @@ ul.sf-favourites:empty + .sf-sorting {
 }
 .sf-sort.selected {
     font-weight: bold;
+}
+.sf-content:not(.sf-selected-recent) .sf-sort-domain-wrapper {
+    display: none;
 }
 
 .sf-instructions {
