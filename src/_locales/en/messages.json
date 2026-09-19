@@ -2,7 +2,7 @@
     "extensionName": {
         "message": "Site Favorites"
     },
-    "favourites": {
-        "message": "favorites"
+    "favourite": {
+        "message": "favorite"
     }
 }

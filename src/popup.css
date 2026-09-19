@@ -152,13 +152,15 @@ ul.sf-favourites {
     text-decoration: line-through;
 }
 
-.sf-sorting {
+.sf-footer {
     background-color: gainsboro;
     color: gray;
+    display: flex;
+    justify-content: space-between;
     margin: 0.5em 0 0 0;
-    padding: 0.5em 0 0.5em 3.5em;
+    padding: 0.5em 1em 0.5em 3.5em;
 }
-ul.sf-favourites:empty + .sf-sorting {
+ul.sf-favourites:empty + * + .sf-footer .sf-sorting {
     display: none;
 }
 .sf-sort:not(.selected) {
@@ -183,6 +185,6 @@ ul.sf-favourites:empty + .sf-sorting {
     font-style: normal;
 }
 
-ul.sf-favourites:empty + * + .sf-instructions {
+ul.sf-favourites:empty + .sf-instructions {
     display: block;
 }

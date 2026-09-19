@@ -1,33 +1,41 @@
 <!doctype html>
 <html>
     <head>
-        <title class="extensionName">Site Favorites</title>
+        <title class="sf-extension-text">Site Favorites</title>
         <link href="popup.css" rel="stylesheet" type="text/css">
     </head>
     <body class="sf-panel sf-tab-container">
         <header>
-            <h1 class="tab-site selected" title="Favourite pages on this site">
-                Site <span class="favourites">favorites</span> for<br/>
+            <h1 class="tab-site sf-fav-title selected" title="Favorite pages on this site">
+                Site <span class="sf-fav-text">favorites</span> for<br/>
                 <span class="sf-site-selector"><span class="sf-site">this site</span><span class="sf-site-selector-icon">&#8964;</span></span>
             </h1>
-            <h1 class="tab-recent" title="Site favourites added in the last month">
-                Recent site<br/>favourites
+            <h1 class="tab-recent sf-fav-title" title="Site favorites added recently">
+                Recent site<br/><span class="sf-fav-text">favorites</span>
             </h1>
             <div class="spacer"></div>
-            <button class="sf-add" title="Favourite"><span class="heart">&#x2764;</span> Add this page</button>
+            <button class="sf-add sf-fav-title" title="Favorite"><span class="heart">&#x2764;</span> Add this page</button>
         </header>
         <section class="sf-content">
             <ul class="sf-favourites"></ul>
-            <p class="sf-sorting">
-                Sort by
-                <span class="sf-sort sf-sort-name">name</span> |
-                <span class="sf-sort-domain-wrapper">
-                    <span class="sf-sort sf-sort-domain">website</span> |
-                </span>
-                <span class="sf-sort sf-sort-date">date</span>
-            </p>
             <p class="sf-instructions">
                 Click to add <span class="arrow">&#10548;</span>
+            </p>
+            <p class="sf-footer">
+                <span class="sf-sorting">
+                    Sort by
+                    <span class="sf-sort sf-sort-name">name</span> |
+                    <span class="sf-sort-domain-wrapper">
+                        <span class="sf-sort sf-sort-domain">website</span> |
+                    </span>
+                    <span class="sf-sort sf-sort-date">date</span>
+                </span>
+                <span>
+                </span>
+                <span>
+                    <span class="sf-extension-text">Site Favorites</span>
+                    <span class="sf-version-text"></span>
+                </span>
             </p>
             <!-- <section class="sf-options">
                 Options
