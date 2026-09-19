@@ -20,29 +20,31 @@ let fullDomain = 'unknown'
 let baseDomain = 'unknown'
 let currentDomain = 'unknown'
 let selectedTab = 'site' // 'site' or 'recent'
-let selectedSort = 'name' // 'name' or 'date'
+let selectedSort = 'name' // 'name', 'domain' or 'date'
 
 initialise()
 return
 
 ///// Initialise
 
-async function initialise () {
+async function initialise() {
+    // Set up the UI
     const tabs = await chrome.tabs.query({currentWindow: true, active: true})
     if (tabs[0]) {
-        fullDomain = new URL(tabs[0].url).hostname
-        baseDomain = getBaseDomain(fullDomain)
-        if (fullDomain !== baseDomain && fullDomain !== `www.${baseDomain}`) {
+        [fullDomain, baseDomain] = getFullAndBaseDomains(new URL(tabs[0].url).hostname)
+        if (fullDomain !== baseDomain) {
             // Pre-select full domain if it has bookmarks, otherwise base
-            $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
+            enableSiteSelector(true)
             const fullFavourites = await getDomainBookmarks(fullDomain)
             await setDomain(fullFavourites?.length ? fullDomain : baseDomain)
         } else {
             await setDomain(baseDomain)
         }
     }
+    // Adjust spelling
     $('.extensionName').text(EXTENSION_NAME)
     $('span.favourites').text(FAVOURITES)
+    // Event handlers
     $('.tab-site').on('click', onShowDomainFavourites)
     $('.tab-recent').on('click', onShowRecentFavourites)
     $('.sf-add').on('click', onAdd)
@@ -109,18 +111,17 @@ async function getOrCreateDomainFolder(domain) {
         })
     }
 }
-async function getRecentBookmarks(domain) {
+async function getRecentBookmarks() {
     const folder = await getFavouritesFolder()
     const tree = folder && await chrome.bookmarks.getSubTree(folder.id)
     if (!tree?.[0]?.children) return []
-    const all = tree[0].children.flatMap(_ => _.children ?? [])
+    const all = tree[0].children.flatMap(subfolder => subfolder.children?.map(bookmark => ({ ...bookmark, domain: subfolder.title })) ?? []).filter(_ => _.url)
     const cutoff = Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000
-    const recent = all.filter(_ => _.dateAdded > cutoff)
-    return recent.sort((a, b) => b.dateAdded - a.dateAdded)
+    return all.filter(_ => _.dateAdded > cutoff)
 }
 async function getDomainBookmarks(domain) {
     const folder = await getDomainFolder(domain)
-    return (folder && await chrome.bookmarks.getChildren(folder.id)) ?? []
+    return (folder && (await chrome.bookmarks.getChildren(folder.id))?.map(bookmark => ({ ...bookmark, domain }))) ?? []
 }
 async function saveOrderedBookmark(domain, bookmark) {
     const domainFolder = await getOrCreateDomainFolder(domain)
@@ -141,53 +142,55 @@ async function saveOrderedBookmark(domain, bookmark) {
 
 ///// UI stuff
 
+// Enable the site selector if there is one
+function enableSiteSelector(enable) {
+    if (enable && fullDomain !== baseDomain) {
+        $('.sf-site-selector').addClass('enabled').on('click', onToggleDomain)
+    } else {
+        $('.sf-site-selector').removeClass('enabled').off('click', onToggleDomain)
+    }
+}
 async function showDomainFavourites() {
     if (selectedTab === 'site') return
+    selectedTab = 'site'
+    $('.sf-tab-container').addClass('sf-selected-domain')
+        .removeClass('sf-selected-recent')
     $('h1.tab-site').addClass('selected')
     $('h1.tab-recent').removeClass('selected')
-    selectedTab = 'site'
-    setDomain(currentDomain)
+    enableSiteSelector(true)
+    await setDomain(currentDomain)
 }
 
 async function showRecentFavourites() {
     if (selectedTab === 'recent') return
+    selectedTab = 'recent'
+    $('.sf-tab-container').addClass('sf-selected-recent')
+        .removeClass('sf-selected-domain')
     $('h1.tab-site').removeClass('selected')
     $('h1.tab-recent').addClass('selected')
-    selectedTab = 'recent'
-    setRecent()
+    enableSiteSelector(false)
+    await setRecent()
+}
+
+function renderFavourites(favourites) {
+    const items = favourites.map(createFavouriteItem)
+    clearFavouritesMenu()
+    $('.sf-favourites').append(items)
+    sortFavourites()
 }
 
 async function setDomain(domain) {
     currentDomain = domain
-    $('.sf-content').addClass('sf-selected-domain')
-    $('.sf-content').removeClass('sf-selected-recent')
     $('h1 .sf-site').text(currentDomain)
+    selectedSort = selectedSort === 'date' ? 'date' : 'name' // default to name unless it was already date
+    showSelectedSort()
     const favourites = await getDomainBookmarks(currentDomain)
-    if (favourites) {
-        selectedSort = 'name'
-        showSelectedSort()
-        favourites.sort(selectedSort === 'name' ?
-            (a, b) => a.title.localeCompare(b.title, "en", { sensitivity: "base" }) :
-            (a, b) => b.dateAdded - a.dateAdded)
-        clearFavouritesMenu()
-        for (const favourite of favourites) {
-            $('.sf-favourites').append(await createFavouriteItem(favourite))
-        }
-    }
+    renderFavourites(favourites)
 }
 
 async function setRecent() {
-    $('.sf-content').addClass('sf-selected-recent')
-    $('.sf-content').removeClass('sf-selected-domain')
     const favourites = await getRecentBookmarks()
-    if (favourites) {
-        selectedSort = 'date'
-        showSelectedSort()
-        clearFavouritesMenu()
-        for (const favourite of favourites) {
-            $('.sf-favourites').append(await createFavouriteItem(favourite))
-        }
-    }
+    renderFavourites(favourites)
 }
 
 function showSelectedSort() {
@@ -208,12 +211,12 @@ function sortFavourites() {
         case 'name': // fallthrough
         default:
             comparator = (a, b) => $(a).find('.sf-link').text().localeCompare($(b).find('.sf-link').text(), "en", { sensitivity: "base" })
-            break;
+            break
     }
-    items.children('li.sf-favourite').detach().sort(comparator).appendTo(items);
+    items.children('li.sf-favourite').detach().not('.deleted').sort(comparator).appendTo(items);
 }
 
-async function addToFavourites ({title, url} = {}) {
+async function addToFavourites({title, url} = {}) {
     if (url) {
         title = title || url
         const bookmark = await saveOrderedBookmark(currentDomain, {title, url})
@@ -229,51 +232,36 @@ function clearFavouritesMenu() {
     $('.sf-favourites').empty()
 }
 
-async function createFavouriteItem(favourite) {
-    const {title, url, id, dateAdded, parentId} = favourite
-    const domain =  (await chrome.bookmarks.get(parentId))[0]?.title
-    const domainElement = domain ? `<span class="sf-domain">${domain}</span>` : ''
-    const dateElement = dateAdded ? `<span class="sf-date" title="${formatAddedDateTooltip(dateAdded)}">${formatAddedDate(dateAdded)}</span>` : ''
-    return $(`<li class="sf-favourite"><a href="#" class="sf-remove">&times;</a><a class="sf-link" href="${url}" title="${url}">${title}</a>${domainElement}${dateElement}`)
-        .data('id', id).data('dateAdded', dateAdded)
+function createFavouriteItem(favourite) {
+    const {title, url, id, dateAdded, domain} = favourite
+    const domainElement = domain ? $('<span>', {class: 'sf-domain', text: domain}) : null
+    const dateElement = dateAdded ? $('<span>', {class: 'sf-date', title: formatAddedDateTooltip(dateAdded), text: formatAddedDate(dateAdded)}) : null
+    return ($('<li>', {class: 'sf-favourite'})
+        .append($('<a>', {class: 'sf-remove', href: '#', html: '&times;'}))
+        .append($('<a>', {class: 'sf-link', href: url, title: url, text: title}))
+        .append(domainElement)
+        .append(dateElement)
+        .data('id', id)
+        .data('dateAdded', dateAdded))
 }
 
-async function addToFavouritesMenu(favourite) {
-    const {title, url, id, dateAdded, parentId} = favourite
-    const domain =  (await chrome.bookmarks.get(parentId))[0]?.title
+function addToFavouritesMenu(favourite) {
+    // Remove if it already exists (e.g. if the title has changed)
     $('.sf-favourites li')
-        .filter(function () {return $(this).find('.sf-link').attr('href') === url})
+        .filter(function () {return $(this).find('.sf-link').attr('href') === favourite.url})
         .remove()
-    const newItem = await createFavouriteItem(favourite)
-
-    let comparator
-    if (selectedSort === 'date') {
-        comparator = (element) => $(element).data('dateAdded') > dateAdded
-    }
-    else if (selectedSort === 'domain') {
-        const domainUpper = domain?.toUpperCase() ?? ''
-        comparator = (element) => $(element).find('.sf-domain').text().toUpperCase() > domainUpper
-    }
-    else {
-        const titleUpper = title.toUpperCase()
-        comparator = (element) => $(element).find('.sf-link').text().toUpperCase() > titleUpper
-    }
-    const nextItem = $('.sf-favourites li').toArray().find(comparator)
-    if (nextItem) {
-        $(nextItem).before(newItem)
-    }
-    else {
-        $('.sf-favourites').append(newItem)
-    }
+    const newItem = createFavouriteItem(favourite)
+    $('.sf-favourites').append(newItem)
+    sortFavourites()
 }
 
-async function removeFromFavourites (listItem) {
+async function removeFromFavourites(listItem) {
     await chrome.bookmarks.remove(listItem.data('id'))
     listItem.addClass('deleted')
         .on('transitionend', () => { listItem.remove() })
 }
 
-async function goToFavourite (listItem) {
+async function goToFavourite(listItem) {
     const url = listItem.find('.sf-link').attr('href')
     const tabs = await chrome.tabs.query({currentWindow: true, active: true})
     await chrome.scripting.executeScript({
@@ -313,8 +301,8 @@ async function getChildByUrl(parentId, url) {
 }
 async function addBookmark(bookmark) {
     const children = await chrome.bookmarks.getChildren(bookmark.parentId)
-    const titleUpper = bookmark.title.toUpperCase()
-    const index = children.findIndex(_ => _.title.toUpperCase() > titleUpper)
+    const titleUpper = bookmark.title.toLocaleUpperCase()
+    const index = children.findIndex(_ => _.title.toLocaleUpperCase() > titleUpper)
     if (index >= 0) {
         bookmark.index = index
     }
@@ -322,6 +310,22 @@ async function addBookmark(bookmark) {
 }
 
 ///// Utilities
+
+// Ignore www. where appropriate
+// Given a domain (e.g. yats.solnet.co.nz), return the full domain (ignoring www. where appropriate)
+// and base (e.g. solnet.co.nz)
+function getFullAndBaseDomains(domain) {
+    let matches
+    if (matches = domain.match(/^(?:www\.)?((?:[^.]+\.)*([^.]+\.[^.]{2,4}\.[^.]{2}))$/)) {
+        return [matches[1], matches[2]]
+    }
+    else if (matches = domain.match(/^(?:www\.)?((?:[^.]+\.)*([^.]+\.[^.]{2,}))$/)) {
+        return [matches[1], matches[2]]
+    }
+    else {
+        return [domain, domain]
+    }
+}
 
 // Given a full domain (e.g. yats.solnet.co.nz), return the base (e.g. solnet.co.nz)
 function getBaseDomain(fullDomain) {
