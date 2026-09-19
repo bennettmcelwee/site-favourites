@@ -60,7 +60,7 @@ header .sf-add:hover {
 .sf-site-selector.enabled .sf-site-selector-icon {
     display: inline-block;
 }
-.sf-site {
+.sf-site-selector.enabled .sf-site {
     color: black;
 }
 
@@ -131,7 +131,7 @@ ul.sf-favourites {
 .sf-favourite .sf-domain {
     color: slategray;
 }
-.sf-content:not(.sf-selected-recent) .sf-domain {
+.sf-tab-container:not(.sf-selected-recent) .sf-domain {
     display: none;
 }
 .sf-favourite .sf-remove {
@@ -167,7 +167,7 @@ ul.sf-favourites:empty + .sf-sorting {
 .sf-sort.selected {
     font-weight: bold;
 }
-.sf-content:not(.sf-selected-recent) .sf-sort-domain-wrapper {
+.sf-tab-container:not(.sf-selected-recent) .sf-sort-domain-wrapper {
     display: none;
 }
 
