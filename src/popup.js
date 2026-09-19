@@ -1,12 +1,13 @@
 // IIFE
 (() => {
 
-// Internally we use "favourites" but the default to display is "favorites"
+// Internally we use "favourite" but the default to display is "favorite"
+const FAVOURITE = chrome.i18n.getMessage('favourite') || 'favorite'
+const USE_ALT_SPELLING = FAVOURITE !== 'favorite'
 const EXTENSION_NAME = chrome.i18n.getMessage('extensionName') || 'Site Favorites'
-const FAVOURITES = chrome.i18n.getMessage('favourites') || 'favorites'
-
 const EXTENSION_NAME_ALT = EXTENSION_NAME === 'Site Favorites' ? 'Site Favourites' : 'Site Favorites'
-const EXTENSION_VERSION = '1.1.1' // Can't read the manifest from here
+
+const EXTENSION_VERSION = '2.0.0' // Can't read the manifest from here
 
 // Settings
 const RECENT_DAYS = 30
@@ -20,7 +21,18 @@ let fullDomain = 'unknown'
 let baseDomain = 'unknown'
 let currentDomain = 'unknown'
 let selectedTab = 'site' // 'site' or 'recent'
-let selectedSort = 'name' // 'name', 'domain' or 'date'
+let selectedSorts = {
+    site: 'name',
+    recent: 'date'
+ } // 'name', 'domain' or 'date'
+
+function selectedSort() {
+    return selectedSorts[selectedTab]
+}
+
+function selectSort(sort) {
+    selectedSorts[selectedTab] = sort
+}
 
 initialise()
 return
@@ -41,9 +53,20 @@ async function initialise() {
             await setDomain(baseDomain)
         }
     }
-    // Adjust spelling
-    $('.extensionName').text(EXTENSION_NAME)
-    $('span.favourites').text(FAVOURITES)
+    // Adjust spelling etc
+    $('.sf-extension-text').text(EXTENSION_NAME)
+    $('.sf-version-text').text(EXTENSION_VERSION)
+    if (USE_ALT_SPELLING) {
+        $('.sf-fav-text').each(function() {
+            const text = $(this).text()
+            $(this).text(text.replace(/avorite/g, 'avourite'))
+        })
+        $('.sf-fav-title').each(function() {
+            const title = $(this).attr('title')
+            $(this).attr('title', title.replace(/avorite/g, 'avourite'))
+        })
+    }
+    $('.tab-recent').attr('title', $('.tab-recent').attr('title').replace('recently', `in the last ${RECENT_DAYS} days`))
     // Event handlers
     $('.tab-site').on('click', onShowDomainFavourites)
     $('.tab-recent').on('click', onShowRecentFavourites)
@@ -83,11 +106,11 @@ async function onLink(event) {
 }
 function onSelectSort(event) {
     if ($(this).hasClass('sf-sort-name'))
-        selectedSort = 'name'
+        selectSort('name')
     else if ($(this).hasClass('sf-sort-date'))
-        selectedSort = 'date'
+        selectSort('date')
     else if ($(this).hasClass('sf-sort-domain'))
-        selectedSort = 'domain'
+        selectSort('domain')
     showSelectedSort()
     sortFavourites()
 }
@@ -182,26 +205,26 @@ function renderFavourites(favourites) {
 async function setDomain(domain) {
     currentDomain = domain
     $('h1 .sf-site').text(currentDomain)
-    selectedSort = selectedSort === 'date' ? 'date' : 'name' // default to name unless it was already date
     showSelectedSort()
     const favourites = await getDomainBookmarks(currentDomain)
     renderFavourites(favourites)
 }
 
 async function setRecent() {
+    showSelectedSort()
     const favourites = await getRecentBookmarks()
     renderFavourites(favourites)
 }
 
 function showSelectedSort() {
     $('.sf-sort-name, .sf-sort-date, .sf-sort-domain').removeClass('selected')
-    $(`.sf-sort-${selectedSort}`).addClass('selected')
+    $(`.sf-sort-${selectedSort()}`).addClass('selected')
 }
 
 function sortFavourites() {
     const items = $('.sf-favourites')
     let comparator
-    switch (selectedSort) {
+    switch (selectedSort()) {
         case 'domain':
             comparator = (a, b) => $(a).find('.sf-domain').text().localeCompare($(b).find('.sf-domain').text(), "en", { sensitivity: "base" })
             break
@@ -324,20 +347,6 @@ function getFullAndBaseDomains(domain) {
     }
     else {
         return [domain, domain]
-    }
-}
-
-// Given a full domain (e.g. yats.solnet.co.nz), return the base (e.g. solnet.co.nz)
-function getBaseDomain(fullDomain) {
-    let matches
-    if (matches = fullDomain.match(/([^.]+\.[^.]{2,4}\.[^.]{2})$/)) {
-        return matches[0]
-    }
-    else if (matches = fullDomain.match(/([^.]+\.[^.]{2,})$/)) {
-        return matches[0]
-    }
-    else {
-        return fullDomain
     }
 }
 
