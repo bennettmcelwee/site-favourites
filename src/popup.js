@@ -42,8 +42,8 @@ return
 async function initialise() {
     // Set up the UI
     const tabs = await chrome.tabs.query({currentWindow: true, active: true})
-    if (tabs[0]) {
-        [fullDomain, baseDomain] = getFullAndBaseDomains(new URL(tabs[0].url).hostname)
+    if (tabs[0]?.url) {
+        ;[fullDomain, baseDomain] = getFullAndBaseDomains(new URL(tabs[0].url).hostname)
         if (fullDomain !== baseDomain) {
             // Pre-select full domain if it has bookmarks, otherwise base
             enableSiteSelector(true)
