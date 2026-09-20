@@ -7,7 +7,7 @@ const USE_ALT_SPELLING = FAVOURITE !== 'favorite'
 const EXTENSION_NAME = chrome.i18n.getMessage('extensionName') || 'Site Favorites'
 const EXTENSION_NAME_ALT = EXTENSION_NAME === 'Site Favorites' ? 'Site Favourites' : 'Site Favorites'
 
-const EXTENSION_VERSION = '2.0.0' // Can't read the manifest from here
+const EXTENSION_VERSION = '2.0.1' // Can't read the manifest from here
 
 // Settings
 const RECENT_DAYS = 30
@@ -268,10 +268,11 @@ function createFavouriteItem(favourite) {
     const domainElement = domain ? $('<span>', {class: 'sf-domain', text: domain}) : null
     const dateElement = dateAdded ? $('<span>', {class: 'sf-date', title: formatAddedDateTooltip(dateAdded), text: formatAddedDate(dateAdded)}) : null
     return ($('<li>', {class: 'sf-favourite'})
-        .append($('<a>', {class: 'sf-remove', href: '#', html: '&times;'}))
         .append($('<a>', {class: 'sf-link', href: url, title: url, text: title}))
         .append(domainElement)
         .append(dateElement)
+        .append($('<span>', {class: 'sf-remove'})
+            .append($('<a>', {href: '#', html: '&times;'})))
         .data('id', id)
         .data('dateAdded', dateAdded))
 }

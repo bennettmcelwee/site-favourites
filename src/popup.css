@@ -70,19 +70,16 @@ header .sf-add:hover {
 }
 
 ul.sf-favourites {
-    display: grid;
-    grid-template-columns: repeat(4, max-content);
-    column-gap: 1em;
+    display: table;
     list-style: none;
-    margin: 0 1em;
-    padding: 0;
+    padding: 0 1em;
+    width: 100%;
 }
 
 .sf-favourite {
     background-color: white;
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: subgrid;
+    color: darkslategray;
+    display: table-row;
     height: 2em;
     line-height: 2;
     transition:
@@ -91,7 +88,6 @@ ul.sf-favourites {
         background-color 1s ease-in;
     white-space: nowrap;
 }
-
 .sf-favourite.added {
     background-color: mediumaquamarine;
     transition: background-color 0s;
@@ -105,6 +101,12 @@ ul.sf-favourites {
     color: red;
     text-decoration: line-through;
 }
+.sf-favourite > * {
+    display: table-cell;
+    white-space: nowrap;
+    width: 1px;
+    padding: 0 1em;
+}
 
 .sf-favourite a,
 .sf-favourite a:visited,
@@ -117,38 +119,32 @@ ul.sf-favourites {
     height: 100%;
 }
 
-.sf-favourite a:focus,
-.sf-favourite a:hover,
-.sf-favourite a:active
+.sf-favourite .sf-link:focus,
+.sf-favourite .sf-link:hover,
+.sf-favourite .sf-link:active
  {
     color: mediumaquamarine;
 }
 
-.sf-favourite .sf-link {
-    display: inline-block;
-}
-.sf-favourite .sf-date,
-.sf-favourite .sf-domain {
-    color: slategray;
-}
 .sf-tab-container:not(.sf-selected-recent) .sf-domain {
     display: none;
 }
 .sf-favourite .sf-remove {
-    color: slategray;
+    padding-right: 0;
+    text-align: right;
+    width: auto;
+}
+
+.sf-favourite .sf-remove a {
     display: inline-block;
-    /* font-size: 125%;
-    line-height: 1.6; /* 2 / 125% */
-    padding: 0 0.5em;
-    width: 1.5em;
+    padding: 0 1em;
 }
 
-.sf-favourite .sf-remove:hover {
+.sf-favourite:has(.sf-remove a:hover) * {
     color: red;
 }
 
-.sf-favourite .sf-remove:hover + .sf-link {
-    color: red;
+.sf-favourite:has(.sf-remove a:hover) .sf-link {
     text-decoration: line-through;
 }
 
@@ -158,7 +154,7 @@ ul.sf-favourites {
     display: flex;
     justify-content: space-between;
     margin: 0.5em 0 0 0;
-    padding: 0.5em 1em 0.5em 3.5em;
+    padding: 0.5em 1em 0.5em 2em;
 }
 ul.sf-favourites:empty + * + .sf-footer .sf-sorting {
     display: none;
