@@ -149,18 +149,20 @@ async function getDomainBookmarks(domain) {
 async function saveOrderedBookmark(domain, bookmark) {
     const domainFolder = await getOrCreateDomainFolder(domain)
     const existing = await getChildByUrl(domainFolder.id, bookmark.url)
+    let savedBookmark
     if (existing) {
-        return chrome.bookmarks.update(existing.id, {
+        savedBookmark = await chrome.bookmarks.update(existing.id, {
             title: bookmark.title
         })
     }
     else {
-        return await addBookmark({
+        savedBookmark = await addBookmark({
             parentId: domainFolder.id,
             title: bookmark.title,
             url: bookmark.url
         })
     }
+    return { ...savedBookmark, domain }
 }
 
 ///// UI stuff
@@ -206,14 +208,20 @@ async function setDomain(domain) {
     currentDomain = domain
     $('h1 .sf-site').text(currentDomain)
     showSelectedSort()
-    const favourites = await getDomainBookmarks(currentDomain)
-    renderFavourites(favourites)
+    const favourites = await getDomainBookmarks(domain)
+    // Render, but only if we're still on this tab and domain
+    if (selectedTab === 'site' && currentDomain === domain) {
+        renderFavourites(favourites)
+    }
 }
 
 async function setRecent() {
     showSelectedSort()
     const favourites = await getRecentBookmarks()
-    renderFavourites(favourites)
+    // Render, but only if we're still on this tab
+    if (selectedTab === 'recent') {
+        renderFavourites(favourites)
+    }
 }
 
 function showSelectedSort() {
@@ -236,7 +244,7 @@ function sortFavourites() {
             comparator = (a, b) => $(a).find('.sf-link').text().localeCompare($(b).find('.sf-link').text(), "en", { sensitivity: "base" })
             break
     }
-    items.children('li.sf-favourite').detach().not('.deleted').sort(comparator).appendTo(items);
+    items.children('li.sf-favourite').not('.deleted').detach().sort(comparator).appendTo(items);
 }
 
 async function addToFavourites({title, url} = {}) {
