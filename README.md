@@ -30,6 +30,7 @@ To build a new release:
 2. Commit all changes
 3. `cd ` _project directory_
 4. `git tag version-`_version_
-5. `zip -r site-favourites-`_version_`.zip src`
+5. `mkdir -p dist`
+6. `zip -r dist/site-favourites-`_version_`.zip src`
 
 Log in to https://chrome.google.com/webstore/developer/dashboard and upload the zip file to the Chrome web store. It can then be installed and updated like any other Chrome extension.
