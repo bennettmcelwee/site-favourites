@@ -7,7 +7,7 @@ const USE_ALT_SPELLING = FAVOURITE !== 'favorite'
 const EXTENSION_NAME = chrome.i18n.getMessage('extensionName') || 'Site Favorites'
 const EXTENSION_NAME_ALT = EXTENSION_NAME === 'Site Favorites' ? 'Site Favourites' : 'Site Favorites'
 
-const EXTENSION_VERSION = '2.0.1' // Can't read the manifest from here
+const EXTENSION_VERSION = '2.1.0' // Can't read the manifest from here
 
 // Settings
 const RECENT_DAYS = 30
