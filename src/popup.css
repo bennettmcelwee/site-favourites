@@ -75,6 +75,9 @@ ul.sf-favourites {
     padding: 0 1em;
     width: 100%;
 }
+ul.sf-favourites:empty {
+    display: none;
+}
 
 .sf-favourite {
     background-color: white;
@@ -107,6 +110,10 @@ ul.sf-favourites {
     width: 1px;
     padding: 0 1em;
 }
+.sf-favourite > :last-child {
+    padding-right: 0;
+    width: auto;
+}
 
 .sf-favourite a,
 .sf-favourite a:visited,
@@ -129,12 +136,10 @@ ul.sf-favourites {
 .sf-tab-container:not(.sf-selected-recent) .sf-domain {
     display: none;
 }
-.sf-favourite .sf-remove {
-    padding-right: 0;
-    text-align: right;
-    width: auto;
-}
 
+.sf-favourite .sf-remove {
+    padding: 0;
+}
 .sf-favourite .sf-remove a {
     display: inline-block;
     padding: 0 1em;
@@ -156,7 +161,7 @@ ul.sf-favourites {
     margin: 0.5em 0 0 0;
     padding: 0.5em 1em 0.5em 2em;
 }
-ul.sf-favourites:empty + * + .sf-footer .sf-sorting {
+ul.sf-favourites:empty ~ .sf-footer .sf-sorting {
     display: none;
 }
 .sf-sort:not(.selected) {
@@ -173,14 +178,28 @@ ul.sf-favourites:empty + * + .sf-footer .sf-sorting {
     display: none;
     color: gray;
     font-style: italic;
-    margin: 0 5em 1em 0;
+    height: 2.5em;
+    margin: 0;
+    padding: 0 5em 1em 0;
     text-align: right;
 }
 .sf-instructions .arrow {
     font-size: 2em;
     font-style: normal;
 }
+.sf-tab-container.sf-selected-domain ul.sf-favourites:empty ~ .sf-instructions {
+    display: block;
+}
 
-ul.sf-favourites:empty + .sf-instructions {
+.sf-empty {
+    display: none;
+    color: gray;
+    font-style: italic;
+    height: 2.5em;
+    margin: 0;
+    padding-top: 1em;
+    text-align: center;
+}
+.sf-tab-container:not(.sf-selected-domain) ul.sf-favourites:empty ~ .sf-empty {
     display: block;
 }

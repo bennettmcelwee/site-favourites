@@ -265,14 +265,15 @@ function clearFavouritesMenu() {
 
 function createFavouriteItem(favourite) {
     const {title, url, id, dateAdded, domain} = favourite
+    const linkElement = $('<a>', {class: 'sf-link', href: url, title: url, text: title})
     const domainElement = domain ? $('<span>', {class: 'sf-domain', text: domain}) : null
     const dateElement = dateAdded ? $('<span>', {class: 'sf-date', title: formatAddedDateTooltip(dateAdded), text: formatAddedDate(dateAdded)}) : null
+    const crossElement = $('<span>', {class: 'sf-remove'}).append($('<a>', {href: '#', html: '&times;'}))
     return ($('<li>', {class: 'sf-favourite'})
-        .append($('<a>', {class: 'sf-link', href: url, title: url, text: title}))
-        .append(domainElement)
+        .append(crossElement)
         .append(dateElement)
-        .append($('<span>', {class: 'sf-remove'})
-            .append($('<a>', {href: '#', html: '&times;'})))
+        .append(domainElement)
+        .append(linkElement)
         .data('id', id)
         .data('dateAdded', dateAdded))
 }
